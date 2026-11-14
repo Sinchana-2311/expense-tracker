@@ -55,7 +55,7 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 let server;
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   server = app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
     console.log(`Serving frontend from: ${frontendDir}`);
@@ -63,4 +63,7 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-module.exports = { app, server, db };
+module.exports = app;
+module.exports.app = app;
+module.exports.server = server;
+module.exports.db = db;
