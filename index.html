@@ -66,7 +66,7 @@
           </button>
           <button type="button" class="nav-item" data-view="budget">
             <i data-lucide="wallet" aria-hidden="true"></i>
-            <span>Budget</span>
+            <span>Monthly Budget</span>
           </button>
         </nav>
 
@@ -113,6 +113,20 @@
         </header>
 
         <main id="main-content" class="main-content">
+          <!-- Backend Connectivity Error Banner -->
+          <div id="backend-error-banner" class="alert-banner is-exceeded" hidden role="alert" style="margin-bottom: 20px;">
+            <i data-lucide="alert-octagon" aria-hidden="true"></i>
+            <div class="alert-banner-content">
+              <strong id="backend-error-title" class="alert-banner-title">Server Connection Error</strong>
+              <p id="backend-error-message" class="alert-banner-message">Unable to connect to the backend server. Please verify the server is running.</p>
+            </div>
+          </div>
+
+          <!-- Global Loading State Indicator -->
+          <div id="loading-indicator" class="empty-state" hidden style="padding: 20px 16px;">
+            <p class="text-sm text-muted">Loading data from server...</p>
+          </div>
+
           <!-- View 1: Dashboard -->
           <section id="view-dashboard" class="view is-active" aria-label="Dashboard">
             <div class="kpi-grid" aria-label="Financial summary">
@@ -153,23 +167,49 @@
               </article>
             </div>
 
-            <div id="dashboard-budget-strip" class="panel budget-strip" aria-label="Monthly budget status">
-              <div class="budget-strip-info">
-                <div class="budget-strip-head">
-                  <span class="panel-title-sm">Monthly Budget Progress</span>
-                  <span id="dashboard-budget-badge" class="status-text">On track</span>
+            <div id="dashboard-budget-strip" class="panel" aria-label="Monthly budget tracker" style="margin-bottom: 24px;">
+              <div class="panel-header" style="margin-bottom: 16px;">
+                <div>
+                  <h2 class="panel-title">Monthly Budget Tracker</h2>
+                  <p id="dashboard-budget-subtitle" class="panel-subtitle">Current month spending against target limit</p>
                 </div>
-                <div class="progress-track" aria-hidden="true">
-                  <div id="dashboard-budget-bar" class="progress-fill" style="width: 0%"></div>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <span id="dashboard-budget-badge" class="status-text">On track</span>
+                  <button type="button" class="btn btn-secondary btn-sm" data-goto-view="budget">
+                    <i data-lucide="wallet" aria-hidden="true"></i>
+                    <span>Set / Manage Budget</span>
+                  </button>
                 </div>
               </div>
-              <div class="budget-strip-metrics">
-                <span id="dashboard-budget-numbers" class="tabular-nums text-sm text-muted">
-                  $0.00 of $0.00 used
-                </span>
-                <button type="button" class="btn btn-secondary btn-sm" data-goto-view="budget">
-                  Manage Budget
-                </button>
+
+              <div class="budget-metrics-grid" style="margin-bottom: 14px;">
+                <div class="budget-metric-box">
+                  <span class="kpi-label">Monthly Budget</span>
+                  <strong id="dashboard-budget-limit" class="budget-metric-val tabular-nums">$0.00</strong>
+                </div>
+                <div class="budget-metric-box">
+                  <span class="kpi-label">Total Spent</span>
+                  <strong id="dashboard-budget-spent" class="budget-metric-val tabular-nums text-expense">$0.00</strong>
+                </div>
+                <div class="budget-metric-box">
+                  <span class="kpi-label">Remaining Balance</span>
+                  <strong id="dashboard-budget-remaining" class="budget-metric-val tabular-nums">$0.00</strong>
+                </div>
+                <div class="budget-metric-box">
+                  <span class="kpi-label">Budget Usage</span>
+                  <strong id="dashboard-budget-percent" class="budget-metric-val tabular-nums">0.0%</strong>
+                </div>
+              </div>
+
+              <div class="budget-progress-section">
+                <div class="budget-progress-labels">
+                  <span class="text-sm text-muted">0%</span>
+                  <span class="text-sm text-muted">80% Warning Threshold</span>
+                  <span class="text-sm text-muted">100% Limit</span>
+                </div>
+                <div class="progress-track progress-track-lg" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="dashboard-budget-progressbar">
+                  <div id="dashboard-budget-bar" class="progress-fill" style="width: 0%"></div>
+                </div>
               </div>
             </div>
 
@@ -451,15 +491,15 @@
                     <strong id="budget-total-limit" class="budget-metric-val tabular-nums">$0.00</strong>
                   </div>
                   <div class="budget-metric-box">
-                    <span class="kpi-label">Monthly Expenses</span>
+                    <span class="kpi-label">Total Spent</span>
                     <strong id="budget-total-spent" class="budget-metric-val tabular-nums text-expense">$0.00</strong>
                   </div>
                   <div class="budget-metric-box">
-                    <span class="kpi-label">Remaining Budget</span>
+                    <span class="kpi-label">Remaining Balance</span>
                     <strong id="budget-remaining" class="budget-metric-val tabular-nums">$0.00</strong>
                   </div>
                   <div class="budget-metric-box">
-                    <span class="kpi-label">Utilization</span>
+                    <span class="kpi-label">Budget Usage</span>
                     <strong id="budget-utilization" class="budget-metric-val tabular-nums">0.0%</strong>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 /**
  * Main Application Coordinator (app.js)
- * Connects storage, pure calculation modules, and DOM view controllers.
+ * Connects API-backed storage, pure calculation modules, and DOM view controllers.
  */
 
 import { storage } from './storage.js';
@@ -42,17 +42,16 @@ const VIEW_METADATA = {
     subtitle: () => 'Income vs. expenses, category breakdown, and savings insights',
   },
   budget: {
-    title: 'Budget Management',
-    subtitle: () => 'Set monthly spending limits and monitor threshold alerts',
+    title: 'Monthly Budget Planner',
+    subtitle: () => 'Set monthly spending limits, track remaining balance, and monitor threshold alerts',
   },
 };
 
-function initApp() {
-  storage.initSeedData();
-
+async function initApp() {
   const currentMonth = getCurrentMonthKey();
   let activeView = 'dashboard';
   let pendingDeleteId = null;
+  let cachedTransactions = [];
 
   const sidebar = document.getElementById('sidebar');
   const sidebarBackdrop = document.getElementById('sidebar-backdrop');
@@ -60,6 +59,9 @@ function initApp() {
   const closeSidebarBtn = document.getElementById('close-sidebar-btn');
   const pageTitleEl = document.getElementById('page-title');
   const pageSubtitleEl = document.getElementById('page-subtitle');
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const errorBanner = document.getElementById('backend-error-banner');
+  const errorMessageEl = document.getElementById('backend-error-message');
 
   // Modals
   const txModal = document.getElementById('transaction-modal');
@@ -78,27 +80,23 @@ function initApp() {
   const deleteMessageEl = document.getElementById('delete-modal-message');
   const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
 
-  // Controllers
-  const transactionsController = initTransactionsView({
-    onFilterChange: () => renderActiveView(),
-    onEdit: (id) => openEditModal(id),
-    onDelete: (id) => openDeleteModal(id),
-    onOpenAdd: () => openAddModal(),
-  });
+  function setLoading(isLoading) {
+    if (loadingIndicator) {
+      loadingIndicator.hidden = !isLoading;
+    }
+  }
 
-  const analyticsController = initAnalyticsView({
-    onPeriodChange: () => renderActiveView(),
-  });
-
-  const budgetController = initBudgetView({
-    defaultMonth: currentMonth,
-    onMonthChange: () => renderActiveView(),
-    onSaveBudget: (monthKey, limit) => {
-      storage.saveBudget(monthKey, limit);
-      renderAllViews();
-      showToast(`Monthly budget for ${formatMonthLabel(monthKey)} saved.`);
-    },
-  });
+  function setBackendError(errorMsg) {
+    if (errorBanner) {
+      if (errorMsg) {
+        if (errorMessageEl) errorMessageEl.textContent = errorMsg;
+        errorBanner.hidden = false;
+      } else {
+        errorBanner.hidden = true;
+      }
+      refreshIcons();
+    }
+  }
 
   function refreshIcons() {
     if (globalThis.lucide && typeof globalThis.lucide.createIcons === 'function') {
@@ -118,7 +116,7 @@ function initApp() {
       if (toast.parentNode === region) {
         toast.remove();
       }
-    }, 2600);
+    }, 3200);
   }
 
   function openMobileSidebar() {
@@ -136,6 +134,37 @@ function initApp() {
   openSidebarBtn?.addEventListener('click', openMobileSidebar);
   closeSidebarBtn?.addEventListener('click', closeMobileSidebar);
   sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
+
+  // Controllers
+  const transactionsController = initTransactionsView({
+    onFilterChange: () => renderActiveView(),
+    onEdit: (id) => openEditModal(id),
+    onDelete: (id) => openDeleteModal(id),
+    onOpenAdd: () => openAddModal(),
+  });
+
+  const analyticsController = initAnalyticsView({
+    onPeriodChange: () => renderActiveView(),
+  });
+
+  const budgetController = initBudgetView({
+    defaultMonth: currentMonth,
+    onMonthChange: () => renderActiveView(),
+    onSaveBudget: async (monthKey, limit) => {
+      try {
+        setLoading(true);
+        await storage.saveBudget(monthKey, limit);
+        await renderAllViews();
+        setBackendError(null);
+        showToast(`Monthly budget for ${formatMonthLabel(monthKey)} saved.`);
+      } catch (err) {
+        setBackendError(err.message);
+        showToast(`Failed to save budget: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    },
+  });
 
   function setActiveView(viewName) {
     if (!VIEW_METADATA[viewName]) return;
@@ -165,34 +194,58 @@ function initApp() {
     renderActiveView();
   }
 
-  function renderActiveView() {
-    const transactions = storage.getTransactions();
-    const budgetMonth = budgetController.getSelectedMonth();
-    const dashboardBudget = storage.getBudgetForMonth(currentMonth);
+  async function renderActiveView() {
+    try {
+      setLoading(true);
+      const transactions = await storage.getTransactions();
+      cachedTransactions = transactions;
+      const budgetMonth = budgetController.getSelectedMonth();
+      const dashboardBudget = await storage.getBudgetForMonth(currentMonth);
 
-    // Always keep dashboard summary/sidebar net balance fresh
-    renderDashboardView(transactions, currentMonth, dashboardBudget);
+      // Always keep dashboard summary/sidebar net balance fresh
+      renderDashboardView(transactions, currentMonth, dashboardBudget);
 
-    if (activeView === 'transactions') {
-      renderTransactionsView(transactions, transactionsController.getFilters());
-    } else if (activeView === 'analytics') {
-      renderAnalyticsView(transactions, analyticsController.getSelectedPeriod());
-    } else if (activeView === 'budget') {
-      const selectedBudget = storage.getBudgetForMonth(budgetMonth);
-      renderBudgetView(transactions, budgetMonth, selectedBudget);
+      if (activeView === 'transactions') {
+        renderTransactionsView(transactions, transactionsController.getFilters());
+      } else if (activeView === 'analytics') {
+        renderAnalyticsView(transactions, analyticsController.getSelectedPeriod());
+      } else if (activeView === 'budget') {
+        const selectedBudget = await storage.getBudgetForMonth(budgetMonth);
+        renderBudgetView(transactions, budgetMonth, selectedBudget);
+      }
+
+      setBackendError(null);
+    } catch (err) {
+      console.error('Failed to load active view data:', err);
+      setBackendError(err.message);
+    } finally {
+      setLoading(false);
+      refreshIcons();
     }
-
-    refreshIcons();
   }
 
-  function renderAllViews() {
-    const transactions = storage.getTransactions();
-    const budgetMonth = budgetController.getSelectedMonth();
-    renderDashboardView(transactions, currentMonth, storage.getBudgetForMonth(currentMonth));
-    renderTransactionsView(transactions, transactionsController.getFilters());
-    renderAnalyticsView(transactions, analyticsController.getSelectedPeriod());
-    renderBudgetView(transactions, budgetMonth, storage.getBudgetForMonth(budgetMonth));
-    refreshIcons();
+  async function renderAllViews() {
+    try {
+      setLoading(true);
+      const transactions = await storage.getTransactions();
+      cachedTransactions = transactions;
+      const budgetMonth = budgetController.getSelectedMonth();
+      const dashboardBudget = await storage.getBudgetForMonth(currentMonth);
+      const selectedBudget = await storage.getBudgetForMonth(budgetMonth);
+
+      renderDashboardView(transactions, currentMonth, dashboardBudget);
+      renderTransactionsView(transactions, transactionsController.getFilters());
+      renderAnalyticsView(transactions, analyticsController.getSelectedPeriod());
+      renderBudgetView(transactions, budgetMonth, selectedBudget);
+
+      setBackendError(null);
+    } catch (err) {
+      console.error('Failed to render views:', err);
+      setBackendError(err.message);
+    } finally {
+      setLoading(false);
+      refreshIcons();
+    }
   }
 
   // Navigation listeners
@@ -278,8 +331,16 @@ function initApp() {
     refreshIcons();
   }
 
-  function openEditModal(id) {
-    const tx = storage.getTransactions().find((item) => item.id === id);
+  async function openEditModal(id) {
+    let tx = cachedTransactions.find((item) => String(item.id) === String(id));
+    if (!tx) {
+      try {
+        tx = await storage.getTransactionById(id);
+      } catch (e) {
+        showToast('Could not load transaction details.');
+        return;
+      }
+    }
     if (!tx) return;
 
     clearTransactionErrors();
@@ -318,7 +379,7 @@ function initApp() {
   document.getElementById('close-transaction-modal-btn')?.addEventListener('click', closeTransactionModal);
   document.getElementById('cancel-transaction-btn')?.addEventListener('click', closeTransactionModal);
 
-  txForm?.addEventListener('submit', (e) => {
+  txForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearTransactionErrors();
 
@@ -343,21 +404,37 @@ function initApp() {
     }
 
     const editId = txIdInput?.value;
-    if (editId) {
-      storage.updateTransaction(editId, payload);
-      showToast('Transaction updated.');
-    } else {
-      storage.saveTransaction(payload);
-      showToast('Transaction added.');
-    }
+    try {
+      setLoading(true);
+      if (editId) {
+        await storage.updateTransaction(editId, payload);
+        showToast('Transaction updated.');
+      } else {
+        await storage.saveTransaction(payload);
+        showToast('Transaction added.');
+      }
 
-    closeTransactionModal();
-    renderAllViews();
+      closeTransactionModal();
+      await renderAllViews();
+      setBackendError(null);
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+      setBackendError(err.message);
+    } finally {
+      setLoading(false);
+    }
   });
 
   // Delete Confirmation Modal Logic
-  function openDeleteModal(id) {
-    const tx = storage.getTransactions().find((item) => item.id === id);
+  async function openDeleteModal(id) {
+    let tx = cachedTransactions.find((item) => String(item.id) === String(id));
+    if (!tx) {
+      try {
+        tx = await storage.getTransactionById(id);
+      } catch {
+        return;
+      }
+    }
     if (!tx) return;
     pendingDeleteId = id;
 
@@ -383,22 +460,54 @@ function initApp() {
 
   document.getElementById('close-delete-modal-btn')?.addEventListener('click', closeDeleteModal);
   document.getElementById('cancel-delete-btn')?.addEventListener('click', closeDeleteModal);
-  confirmDeleteBtn?.addEventListener('click', () => {
+
+  confirmDeleteBtn?.addEventListener('click', async () => {
     if (!pendingDeleteId) return;
-    storage.deleteTransaction(pendingDeleteId);
-    closeDeleteModal();
-    renderAllViews();
-    showToast('Transaction deleted.');
+    try {
+      setLoading(true);
+      await storage.deleteTransaction(pendingDeleteId);
+      closeDeleteModal();
+      await renderAllViews();
+      setBackendError(null);
+      showToast('Transaction deleted.');
+    } catch (err) {
+      showToast(`Failed to delete: ${err.message}`);
+      setBackendError(err.message);
+    } finally {
+      setLoading(false);
+    }
   });
 
   // Reset Demo Data
-  document.getElementById('reset-demo-btn')?.addEventListener('click', () => {
-    storage.resetDemoData();
-    renderAllViews();
-    showToast('Demo data restored.');
+  document.getElementById('reset-demo-btn')?.addEventListener('click', async () => {
+    try {
+      setLoading(true);
+      await storage.resetDemoData();
+      await renderAllViews();
+      setBackendError(null);
+      showToast('Demo data restored.');
+    } catch (err) {
+      showToast(`Failed to restore demo data: ${err.message}`);
+      setBackendError(err.message);
+    } finally {
+      setLoading(false);
+    }
   });
 
-  // Initial route
+  // Run initial migration from LocalStorage if needed
+  try {
+    setLoading(true);
+    const migration = await storage.migrateFromLocalStorage();
+    if (migration.migrated && migration.totalCount > 0) {
+      showToast(`Migrated ${migration.txCount} transactions and ${migration.budgetCount} budgets to database.`);
+    }
+  } catch (err) {
+    console.warn('LocalStorage migration note:', err.message);
+  } finally {
+    setLoading(false);
+  }
+
+  // Initial route and initial data load
   const initialHash = window.location.hash.replace('#', '');
   setActiveView(VIEW_METADATA[initialHash] ? initialHash : 'dashboard');
 }

@@ -133,7 +133,7 @@ export function sortTransactions(transactions, sortBy = 'date-desc') {
     switch (sortBy) {
       case 'date-asc': {
         const cmp = a.date.localeCompare(b.date);
-        return cmp !== 0 ? cmp : a.id.localeCompare(b.id);
+        return cmp !== 0 ? cmp : String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
       }
       case 'amount-desc': {
         const cmp = b.amount - a.amount;
@@ -146,7 +146,7 @@ export function sortTransactions(transactions, sortBy = 'date-desc') {
       case 'date-desc':
       default: {
         const cmp = b.date.localeCompare(a.date);
-        return cmp !== 0 ? cmp : b.id.localeCompare(a.id);
+        return cmp !== 0 ? cmp : String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
       }
     }
   });

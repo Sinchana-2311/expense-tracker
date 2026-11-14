@@ -97,6 +97,14 @@ test('filtering and sorting transactions work across search, type, category, and
   const oldestFirst = sortTransactions(items, 'date-asc');
   assert.equal(oldestFirst[0].id, '1');
 
+  // Verify sort handles SQLite integer numeric IDs without throwing
+  const numericIdItems = [
+    { id: 1, title: 'Salary', amount: 4000, category: 'Salary', type: 'income', date: '2026-11-01', description: '' },
+    { id: 2, title: 'Rent', amount: 1500, category: 'Housing', type: 'expense', date: '2026-11-01', description: '' },
+  ];
+  const sortedNumeric = sortTransactions(numericIdItems, 'date-desc');
+  assert.equal(sortedNumeric[0].id, 2);
+
   assert.equal(formatCurrency(-45.5), '-$45.50');
 });
 

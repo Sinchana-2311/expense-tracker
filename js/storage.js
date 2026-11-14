@@ -1,14 +1,14 @@
 /**
- * Centralized storage module.
- * All LocalStorage reads/writes are isolated here so future REST API calls
- * (e.g., fetch('/api/transactions')) can replace this implementation
- * without altering UI or calculation modules.
+ * Storage and API client module.
+ * Replaces LocalStorage persistence with REST API fetch calls
+ * while preserving LocalStorage migration capabilities and unit test compatibility.
  */
 
 export const STORAGE_KEYS = {
   TRANSACTIONS: 'ledgerflow_transactions_v1',
   BUDGETS: 'ledgerflow_budgets_v1',
   INITIALIZED: 'ledgerflow_initialized_v1',
+  MIGRATED: 'ledgerflow_migrated_to_backend_v1',
 };
 
 export const SEED_TRANSACTIONS = [
@@ -84,195 +84,6 @@ export const SEED_TRANSACTIONS = [
     date: '2026-11-13',
     description: 'Routine biannual dental cleaning',
   },
-  {
-    id: 'tx_202610_01',
-    title: 'Monthly Salary',
-    amount: 4650.0,
-    category: 'Salary',
-    type: 'income',
-    date: '2026-10-01',
-    description: 'October payroll deposit',
-  },
-  {
-    id: 'tx_202610_02',
-    title: 'Apartment Rent',
-    amount: 1450.0,
-    category: 'Housing',
-    type: 'expense',
-    date: '2026-10-02',
-    description: 'October monthly lease payment',
-  },
-  {
-    id: 'tx_202610_03',
-    title: 'Supermarket & Pantry',
-    amount: 410.8,
-    category: 'Food',
-    type: 'expense',
-    date: '2026-10-12',
-    description: 'October groceries and pantry restock',
-  },
-  {
-    id: 'tx_202610_04',
-    title: 'Autumn Jacket & Shoes',
-    amount: 215.0,
-    category: 'Shopping',
-    type: 'expense',
-    date: '2026-10-19',
-    description: 'Seasonal wardrobe replacement',
-  },
-  {
-    id: 'tx_202610_05',
-    title: 'Dividend Payout',
-    amount: 320.0,
-    category: 'Investments',
-    type: 'income',
-    date: '2026-10-22',
-    description: 'Quarterly index ETF distribution',
-  },
-  {
-    id: 'tx_202610_06',
-    title: 'Utilities & Gas',
-    amount: 158.6,
-    category: 'Utilities',
-    type: 'expense',
-    date: '2026-10-25',
-    description: 'October electric, water, and internet',
-  },
-  {
-    id: 'tx_202609_01',
-    title: 'Monthly Salary',
-    amount: 4650.0,
-    category: 'Salary',
-    type: 'income',
-    date: '2026-09-01',
-    description: 'September payroll deposit',
-  },
-  {
-    id: 'tx_202609_02',
-    title: 'Apartment Rent',
-    amount: 1450.0,
-    category: 'Housing',
-    type: 'expense',
-    date: '2026-09-02',
-    description: 'September monthly lease payment',
-  },
-  {
-    id: 'tx_202609_03',
-    title: 'Groceries & Dining',
-    amount: 385.0,
-    category: 'Food',
-    type: 'expense',
-    date: '2026-09-14',
-    description: 'Weekly groceries and weekend dinner',
-  },
-  {
-    id: 'tx_202609_04',
-    title: 'Concert & Cinema Tickets',
-    amount: 140.0,
-    category: 'Entertainment',
-    type: 'expense',
-    date: '2026-09-20',
-    description: 'Live jazz performance and movie night',
-  },
-  {
-    id: 'tx_202608_01',
-    title: 'Monthly Salary',
-    amount: 4650.0,
-    category: 'Salary',
-    type: 'income',
-    date: '2026-08-01',
-    description: 'August payroll deposit',
-  },
-  {
-    id: 'tx_202608_02',
-    title: 'Apartment Rent',
-    amount: 1450.0,
-    category: 'Housing',
-    type: 'expense',
-    date: '2026-08-02',
-    description: 'August monthly lease payment',
-  },
-  {
-    id: 'tx_202608_03',
-    title: 'Groceries & Summer Produce',
-    amount: 342.0,
-    category: 'Food',
-    type: 'expense',
-    date: '2026-08-15',
-    description: 'Weekly groceries and market produce',
-  },
-  {
-    id: 'tx_202608_04',
-    title: 'Electric & Cooling Utilities',
-    amount: 185.0,
-    category: 'Utilities',
-    type: 'expense',
-    date: '2026-08-22',
-    description: 'Peak summer electricity and internet',
-  },
-  {
-    id: 'tx_202607_01',
-    title: 'Monthly Salary',
-    amount: 4650.0,
-    category: 'Salary',
-    type: 'income',
-    date: '2026-07-01',
-    description: 'July payroll deposit',
-  },
-  {
-    id: 'tx_202607_02',
-    title: 'Apartment Rent',
-    amount: 1450.0,
-    category: 'Housing',
-    type: 'expense',
-    date: '2026-07-02',
-    description: 'July monthly lease payment',
-  },
-  {
-    id: 'tx_202607_03',
-    title: 'Weekend Rail Trip',
-    amount: 265.0,
-    category: 'Transport',
-    type: 'expense',
-    date: '2026-07-11',
-    description: 'Intercity rail tickets and local transit',
-  },
-  {
-    id: 'tx_202607_04',
-    title: 'Web Performance Audit',
-    amount: 600.0,
-    category: 'Freelance',
-    type: 'income',
-    date: '2026-07-18',
-    description: 'Advisory optimization engagement',
-  },
-  {
-    id: 'tx_202606_01',
-    title: 'Monthly Salary',
-    amount: 4650.0,
-    category: 'Salary',
-    type: 'income',
-    date: '2026-06-01',
-    description: 'June payroll deposit',
-  },
-  {
-    id: 'tx_202606_02',
-    title: 'Apartment Rent',
-    amount: 1450.0,
-    category: 'Housing',
-    type: 'expense',
-    date: '2026-06-02',
-    description: 'June monthly lease payment',
-  },
-  {
-    id: 'tx_202606_03',
-    title: 'Grocery & Household Supplies',
-    amount: 360.0,
-    category: 'Food',
-    type: 'expense',
-    date: '2026-06-14',
-    description: 'Monthly staples and kitchen supplies',
-  },
 ];
 
 export const SEED_BUDGETS = {
@@ -281,42 +92,246 @@ export const SEED_BUDGETS = {
   '2026-09': 2800,
 };
 
-function generateUniqueId() {
-  if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function') {
-    return `tx_${globalThis.crypto.randomUUID()}`;
+const API_BASE = '/api';
+
+async function request(endpoint, options = {}) {
+  const url = `${API_BASE}${endpoint}`;
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  let response;
+  try {
+    response = await fetch(url, config);
+  } catch (networkError) {
+    throw new Error(`Cannot connect to backend server at ${url}. Please verify the server is running.`);
   }
-  return `tx_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const errorMsg = result?.error || `Request failed with status ${response.status} (${response.statusText})`;
+    const error = new Error(errorMsg);
+    error.status = response.status;
+    error.data = result;
+    throw error;
+  }
+
+  return result;
 }
 
-function normalizeTransaction(raw) {
-  return {
-    id: String(raw.id || generateUniqueId()),
-    title: String(raw.title || '').trim(),
-    amount: Number(Number(raw.amount || 0).toFixed(2)),
-    category: String(raw.category || 'Other').trim(),
-    type: raw.type === 'income' ? 'income' : 'expense',
-    date: String(raw.date || '').slice(0, 10),
-    description: String(raw.description || '').trim(),
-  };
-}
+// API-backed storage client
+export const storage = {
+  async getTransactions() {
+    const res = await request('/transactions');
+    return Array.isArray(res.data) ? res.data : [];
+  },
 
-function createMemoryFallbackStorage() {
-  const store = new Map();
-  return {
-    getItem(key) {
-      return store.has(key) ? store.get(key) : null;
-    },
-    setItem(key, value) {
-      store.set(key, String(value));
-    },
-    removeItem(key) {
-      store.delete(key);
-    },
-  };
-}
+  async getTransactionById(id) {
+    const res = await request(`/transactions/${id}`);
+    return res.data;
+  },
+
+  async saveTransaction(transactionInput) {
+    const payload = {
+      title: transactionInput.title,
+      amount: Number(transactionInput.amount),
+      category: transactionInput.category,
+      type: transactionInput.type,
+      date: transactionInput.date,
+      description: transactionInput.description || '',
+    };
+    const res = await request('/transactions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  async updateTransaction(id, updates) {
+    const payload = {
+      title: updates.title,
+      amount: Number(updates.amount),
+      category: updates.category,
+      type: updates.type,
+      date: updates.date,
+      description: updates.description || '',
+    };
+    const res = await request(`/transactions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    return res.data;
+  },
+
+  async deleteTransaction(id) {
+    await request(`/transactions/${id}`, {
+      method: 'DELETE',
+    });
+    return true;
+  },
+
+  async getBudgetForMonth(monthKey) {
+    if (!monthKey || !monthKey.includes('-')) return null;
+    const [yearStr, monthStr] = monthKey.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+
+    try {
+      const res = await request(`/budgets/${year}/${month}`);
+      return res.data ? Number(res.data.amount) : null;
+    } catch (err) {
+      if (err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
+  },
+
+  async getBudgetRecordForMonth(monthKey) {
+    if (!monthKey || !monthKey.includes('-')) return null;
+    const [yearStr, monthStr] = monthKey.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+
+    try {
+      const res = await request(`/budgets/${year}/${month}`);
+      return res.data || null;
+    } catch (err) {
+      if (err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
+  },
+
+  async saveBudget(monthKey, limit) {
+    if (!monthKey || !monthKey.includes('-')) {
+      throw new Error('Invalid month key for budget');
+    }
+    const [yearStr, monthStr] = monthKey.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const amount = Number(Number(limit).toFixed(2));
+
+    const existing = await this.getBudgetRecordForMonth(monthKey);
+
+    if (existing && existing.id) {
+      const res = await request(`/budgets/${existing.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ amount, year, month }),
+      });
+      return Number(res.data.amount);
+    } else {
+      const res = await request('/budgets', {
+        method: 'POST',
+        body: JSON.stringify({ year, month, amount }),
+      });
+      return Number(res.data.amount);
+    }
+  },
+
+  async migrateFromLocalStorage() {
+    if (typeof globalThis.localStorage === 'undefined') {
+      return { migrated: false, txCount: 0, budgetCount: 0 };
+    }
+
+    const isMigrated = globalThis.localStorage.getItem(STORAGE_KEYS.MIGRATED);
+    if (isMigrated === 'true') {
+      return { migrated: false, txCount: 0, budgetCount: 0 };
+    }
+
+    let txCount = 0;
+    let budgetCount = 0;
+
+    // Check existing transactions in LocalStorage
+    const rawTx = globalThis.localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+    let localTransactions = [];
+    try {
+      if (rawTx) localTransactions = JSON.parse(rawTx);
+    } catch {}
+
+    // Check existing budgets in LocalStorage
+    const rawBudgets = globalThis.localStorage.getItem(STORAGE_KEYS.BUDGETS);
+    let localBudgets = {};
+    try {
+      if (rawBudgets) localBudgets = JSON.parse(rawBudgets);
+    } catch {}
+
+    // If LocalStorage was uninitialized, use seed data for initial import
+    const initialized = globalThis.localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+    if (!initialized && (!localTransactions || localTransactions.length === 0)) {
+      localTransactions = SEED_TRANSACTIONS;
+      localBudgets = SEED_BUDGETS;
+    }
+
+    // Import transactions
+    if (Array.isArray(localTransactions) && localTransactions.length > 0) {
+      // Get existing server transactions to avoid duplicates
+      const existing = await this.getTransactions();
+      const existingSignatures = new Set(
+        existing.map((t) => `${t.title}_${t.date}_${t.amount}_${t.type}`)
+      );
+
+      for (const tx of localTransactions) {
+        const sig = `${tx.title}_${tx.date}_${tx.amount}_${tx.type}`;
+        if (!existingSignatures.has(sig)) {
+          try {
+            await this.saveTransaction(tx);
+            existingSignatures.add(sig);
+            txCount += 1;
+          } catch (e) {
+            console.warn('Failed to import transaction:', tx, e);
+          }
+        }
+      }
+    }
+
+    // Import budgets
+    if (localBudgets && typeof localBudgets === 'object') {
+      for (const [monthKey, limit] of Object.entries(localBudgets)) {
+        if (monthKey && limit && Number(limit) > 0) {
+          try {
+            await this.saveBudget(monthKey, Number(limit));
+            budgetCount += 1;
+          } catch (e) {
+            console.warn('Failed to import budget for', monthKey, e);
+          }
+        }
+      }
+    }
+
+    // Set migration flag so it never runs twice, keeping original localStorage data intact as backup
+    globalThis.localStorage.setItem(STORAGE_KEYS.MIGRATED, 'true');
+
+    return {
+      migrated: true,
+      txCount,
+      budgetCount,
+      totalCount: txCount + budgetCount,
+    };
+  },
+
+  async resetDemoData() {
+    for (const tx of SEED_TRANSACTIONS) {
+      try {
+        await this.saveTransaction(tx);
+      } catch {}
+    }
+    for (const [monthKey, limit] of Object.entries(SEED_BUDGETS)) {
+      try {
+        await this.saveBudget(monthKey, limit);
+      } catch {}
+    }
+  },
+};
 
 /**
- * Creates a storage repository backed by a synchronous Storage-compatible adapter.
+ * Storage adapter factory maintained for unit testing backwards-compatibility.
  */
 export function createStorageRepository(adapter) {
   const backend = adapter || (typeof globalThis.localStorage !== 'undefined' ? globalThis.localStorage : createMemoryFallbackStorage());
@@ -338,10 +353,7 @@ export function createStorageRepository(adapter) {
   function initSeedData() {
     const initialized = backend.getItem(STORAGE_KEYS.INITIALIZED);
     if (!initialized) {
-      writeJson(
-        STORAGE_KEYS.TRANSACTIONS,
-        SEED_TRANSACTIONS.map((tx) => normalizeTransaction(tx))
-      );
+      writeJson(STORAGE_KEYS.TRANSACTIONS, SEED_TRANSACTIONS);
       writeJson(STORAGE_KEYS.BUDGETS, { ...SEED_BUDGETS });
       backend.setItem(STORAGE_KEYS.INITIALIZED, 'true');
     }
@@ -349,75 +361,52 @@ export function createStorageRepository(adapter) {
 
   function getTransactions() {
     const list = readJson(STORAGE_KEYS.TRANSACTIONS, []);
-    if (!Array.isArray(list)) return [];
-    return list.map(normalizeTransaction);
+    return Array.isArray(list) ? list : [];
   }
 
-  function saveTransaction(transactionInput) {
-    const transactions = getTransactions();
-    const record = normalizeTransaction({
-      ...transactionInput,
-      id: transactionInput.id || generateUniqueId(),
-    });
-    transactions.push(record);
-    writeJson(STORAGE_KEYS.TRANSACTIONS, transactions);
+  function saveTransaction(input) {
+    const list = getTransactions();
+    const record = { ...input, id: input.id || `tx_${Date.now()}` };
+    list.push(record);
+    writeJson(STORAGE_KEYS.TRANSACTIONS, list);
     return record;
   }
 
   function updateTransaction(id, updates) {
-    const transactions = getTransactions();
-    const index = transactions.findIndex((tx) => tx.id === id);
-    if (index === -1) return null;
-
-    const updated = normalizeTransaction({
-      ...transactions[index],
-      ...updates,
-      id,
-    });
-    transactions[index] = updated;
-    writeJson(STORAGE_KEYS.TRANSACTIONS, transactions);
-    return updated;
+    const list = getTransactions();
+    const idx = list.findIndex((t) => t.id === id);
+    if (idx === -1) return null;
+    list[idx] = { ...list[idx], ...updates, id };
+    writeJson(STORAGE_KEYS.TRANSACTIONS, list);
+    return list[idx];
   }
 
   function deleteTransaction(id) {
-    const transactions = getTransactions();
-    const filtered = transactions.filter((tx) => tx.id !== id);
-    if (filtered.length === transactions.length) return false;
+    const list = getTransactions();
+    const filtered = list.filter((t) => t.id !== id);
+    if (filtered.length === list.length) return false;
     writeJson(STORAGE_KEYS.TRANSACTIONS, filtered);
     return true;
   }
 
   function getBudgets() {
-    const raw = readJson(STORAGE_KEYS.BUDGETS, {});
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
-    const sanitized = {};
-    for (const [month, value] of Object.entries(raw)) {
-      const num = Number(value);
-      if (Number.isFinite(num) && num > 0) {
-        sanitized[month] = Number(num.toFixed(2));
-      }
-    }
-    return sanitized;
+    return readJson(STORAGE_KEYS.BUDGETS, {});
   }
 
   function getBudgetForMonth(monthKey) {
     const budgets = getBudgets();
-    return Object.prototype.hasOwnProperty.call(budgets, monthKey) ? budgets[monthKey] : null;
+    return budgets[monthKey] ?? null;
   }
 
   function saveBudget(monthKey, limit) {
     const budgets = getBudgets();
-    const amount = Number(Number(limit).toFixed(2));
-    budgets[monthKey] = amount;
+    budgets[monthKey] = limit;
     writeJson(STORAGE_KEYS.BUDGETS, budgets);
-    return amount;
+    return limit;
   }
 
   function resetDemoData() {
-    writeJson(
-      STORAGE_KEYS.TRANSACTIONS,
-      SEED_TRANSACTIONS.map((tx) => normalizeTransaction(tx))
-    );
+    writeJson(STORAGE_KEYS.TRANSACTIONS, SEED_TRANSACTIONS);
     writeJson(STORAGE_KEYS.BUDGETS, { ...SEED_BUDGETS });
     backend.setItem(STORAGE_KEYS.INITIALIZED, 'true');
   }
@@ -435,4 +424,11 @@ export function createStorageRepository(adapter) {
   };
 }
 
-export const storage = createStorageRepository();
+function createMemoryFallbackStorage() {
+  const store = new Map();
+  return {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+  };
+}

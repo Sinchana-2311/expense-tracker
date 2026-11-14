@@ -179,10 +179,44 @@ export function renderDashboardView(transactions, currentMonth, budgetLimit) {
     monthlyMetaEl.textContent = `${formatMonthLabel(currentMonth)} · ${metrics.monthlyExpenseCount} ${metrics.monthlyExpenseCount === 1 ? 'expense' : 'expenses'}`;
   }
 
-  // Dashboard Budget Strip
+  // Dashboard Monthly Budget Tracker Card
   const budgetBadgeEl = document.getElementById('dashboard-budget-badge');
   const budgetBarEl = document.getElementById('dashboard-budget-bar');
-  const budgetNumbersEl = document.getElementById('dashboard-budget-numbers');
+  const budgetLimitEl = document.getElementById('dashboard-budget-limit');
+  const budgetSpentEl = document.getElementById('dashboard-budget-spent');
+  const budgetRemainingEl = document.getElementById('dashboard-budget-remaining');
+  const budgetPercentEl = document.getElementById('dashboard-budget-percent');
+  const budgetProgressbarEl = document.getElementById('dashboard-budget-progressbar');
+  const budgetSubtitleEl = document.getElementById('dashboard-budget-subtitle');
+
+  if (budgetSubtitleEl) {
+    budgetSubtitleEl.textContent = `${formatMonthLabel(currentMonth)} spending against target limit`;
+  }
+
+  if (budgetLimitEl) {
+    budgetLimitEl.textContent = budgetStatus.budgetLimit > 0 ? formatCurrency(budgetStatus.budgetLimit) : 'Not set';
+  }
+
+  if (budgetSpentEl) {
+    budgetSpentEl.textContent = formatCurrency(budgetStatus.monthlyExpenses);
+  }
+
+  if (budgetRemainingEl) {
+    if (budgetStatus.status === 'unset') {
+      budgetRemainingEl.textContent = '—';
+      budgetRemainingEl.className = 'budget-metric-val tabular-nums';
+    } else if (budgetStatus.remainingBudget < 0) {
+      budgetRemainingEl.textContent = `-${formatCurrency(Math.abs(budgetStatus.remainingBudget))}`;
+      budgetRemainingEl.className = 'budget-metric-val tabular-nums text-expense';
+    } else {
+      budgetRemainingEl.textContent = formatCurrency(budgetStatus.remainingBudget);
+      budgetRemainingEl.className = 'budget-metric-val tabular-nums text-income';
+    }
+  }
+
+  if (budgetPercentEl) {
+    budgetPercentEl.textContent = budgetStatus.status === 'unset' ? '0.0%' : `${budgetStatus.utilizationPercent.toFixed(1)}%`;
+  }
 
   if (budgetBadgeEl) {
     budgetBadgeEl.className = `status-text is-${budgetStatus.status}`;
@@ -193,7 +227,7 @@ export function renderDashboardView(transactions, currentMonth, budgetLimit) {
     } else if (budgetStatus.status === 'nominal') {
       budgetBadgeEl.textContent = `On track · ${budgetStatus.utilizationPercent.toFixed(1)}% used`;
     } else {
-      budgetBadgeEl.textContent = 'No monthly budget set';
+      budgetBadgeEl.textContent = 'No budget set';
     }
   }
 
@@ -203,11 +237,8 @@ export function renderDashboardView(transactions, currentMonth, budgetLimit) {
     budgetBarEl.className = `progress-fill is-${budgetStatus.status}`;
   }
 
-  if (budgetNumbersEl) {
-    budgetNumbersEl.textContent =
-      budgetStatus.budgetLimit > 0
-        ? `${formatCurrency(budgetStatus.monthlyExpenses)} of ${formatCurrency(budgetStatus.budgetLimit)} used`
-        : `${formatCurrency(budgetStatus.monthlyExpenses)} spent this month`;
+  if (budgetProgressbarEl) {
+    budgetProgressbarEl.setAttribute('aria-valuenow', String(Math.round(budgetStatus.utilizationPercent)));
   }
 
   // Charts
